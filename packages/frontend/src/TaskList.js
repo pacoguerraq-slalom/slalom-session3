@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
-  List, ListItem, ListItemText, IconButton, Checkbox, Typography, Box, CircularProgress, Paper, Chip
+  List, ListItem, ListItemText, IconButton, Checkbox, Typography, Box, CircularProgress, Paper, Chip,
+  ToggleButton, ToggleButtonGroup
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import EventIcon from '@mui/icons-material/Event';
+
+// Priority values allowed for a task; new tasks default to P3 on the backend
+const PRIORITY_OPTIONS = ['P1', 'P2', 'P3'];
+const PRIORITY_UNSELECTED_COLOR = '#7A7A7A';
+const PRIORITY_SELECTED_COLOR = '#07F2E6';
 
 function TaskList({ onEdit }) {
   const [tasks, setTasks] = useState([]);
@@ -61,6 +67,22 @@ function TaskList({ onEdit }) {
       fetchTasks();
     } catch (err) {
       setError('Failed to delete task');
+    }
+  };
+
+  const handlePriorityChange = async (task, newPriority) => {
+    // Ignore deselect clicks (ToggleButtonGroup exclusive mode) and no-op changes
+    if (!newPriority || newPriority === task.priority) return;
+    try {
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priority: newPriority })
+      });
+      if (!response.ok) throw new Error('Failed to update task priority');
+      fetchTasks();
+    } catch (err) {
+      setError('Failed to update task priority');
     }
   };
 
@@ -163,6 +185,7 @@ function TaskList({ onEdit }) {
               }}
             />
             <ListItemText
+              secondaryTypographyProps={{ component: 'div' }}
               primary={
                 <Typography 
                   variant="body2"
@@ -177,18 +200,63 @@ function TaskList({ onEdit }) {
                 </Typography>
               }
               secondary={
-                task.description && (
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      color: task.completed ? '#bdbdbd' : '#616161',
-                      fontSize: '0.85rem',
-                      mt: 0.25
-                    }}
+                <>
+                  {task.description && (
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: task.completed ? '#bdbdbd' : '#616161',
+                        fontSize: '0.85rem',
+                        mt: 0.25
+                      }}
+                    >
+                      {task.description}
+                    </Typography>
+                  )}
+                  <ToggleButtonGroup
+                    value={task.priority || 'P3'}
+                    exclusive
+                    onChange={(e, newPriority) => handlePriorityChange(task, newPriority)}
+                    aria-label={`Priority for ${task.title}`}
+                    size="small"
+                    sx={{ mt: 0.75, gap: 0.5 }}
                   >
-                    {task.description}
-                  </Typography>
-                )
+                    {PRIORITY_OPTIONS.map((option) => (
+                      <ToggleButton
+                        key={option}
+                        value={option}
+                        data-testid={`priority-${option}-${task.id}`}
+                        aria-label={`Set priority ${option}`}
+                        sx={{
+                          minWidth: 36,
+                          height: 24,
+                          px: 1,
+                          py: 0,
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          lineHeight: 1,
+                          textTransform: 'none',
+                          color: '#ffffff',
+                          backgroundColor: PRIORITY_UNSELECTED_COLOR,
+                          border: `1px solid ${PRIORITY_UNSELECTED_COLOR}`,
+                          '&:hover': {
+                            backgroundColor: '#616161',
+                          },
+                          '&.Mui-selected': {
+                            backgroundColor: PRIORITY_SELECTED_COLOR,
+                            borderColor: PRIORITY_SELECTED_COLOR,
+                            color: '#212121',
+                          },
+                          '&.Mui-selected:hover': {
+                            backgroundColor: PRIORITY_SELECTED_COLOR,
+                          }
+                        }}
+                      >
+                        {option}
+                      </ToggleButton>
+                    ))}
+                  </ToggleButtonGroup>
+                </>
               }
             />
             <Box 

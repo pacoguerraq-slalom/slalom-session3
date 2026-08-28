@@ -12,8 +12,8 @@ const server = setupServer(
     return res(
       ctx.status(200),
       ctx.json([
-        { id: 1, title: 'Test Task 1', description: 'Desc 1', due_date: '2025-09-30', completed: 0 },
-        { id: 2, title: 'Test Task 2', description: 'Desc 2', due_date: '2025-10-01', completed: 1 },
+        { id: 1, title: 'Test Task 1', description: 'Desc 1', due_date: '2025-09-30', completed: 0, priority: 'P3' },
+        { id: 2, title: 'Test Task 2', description: 'Desc 2', due_date: '2025-10-01', completed: 1, priority: 'P1' },
       ])
     );
   }),
@@ -35,6 +35,7 @@ const server = setupServer(
         description: req.body.description || '',
         due_date: req.body.due_date || null,
         completed: 0,
+        priority: req.body.priority || 'P3',
       })
     );
   }),
@@ -51,7 +52,11 @@ const server = setupServer(
   rest.patch('/api/tasks/:id', (req, res, ctx) => {
     return res(
       ctx.status(200),
-      ctx.json({ id: Number(req.params.id), completed: req.body.completed ? 1 : 0 })
+      ctx.json({
+        id: Number(req.params.id),
+        completed: req.body.completed ? 1 : 0,
+        priority: req.body.priority,
+      })
     );
   }),
 
@@ -134,6 +139,67 @@ describe('TODO App', () => {
     });
     await waitFor(() => {
       expect(screen.getByText(/Failed to fetch tasks/)).toBeInTheDocument();
+    });
+  });
+
+  test('new tasks default to P3 priority', async () => {
+    let tasks = [
+      { id: 1, title: 'Test Task 1', description: 'Desc 1', due_date: '2025-09-30', completed: 0, priority: 'P3' },
+    ];
+    server.use(
+      rest.get('/api/tasks', (req, res, ctx) => {
+        return res(ctx.status(200), ctx.json(tasks));
+      }),
+      rest.post('/api/tasks', (req, res, ctx) => {
+        const newTask = {
+          id: 2,
+          title: req.body.title,
+          description: req.body.description || '',
+          due_date: req.body.due_date || null,
+          completed: 0,
+          priority: req.body.priority || 'P3',
+        };
+        tasks = [...tasks, newTask];
+        return res(ctx.status(201), ctx.json(newTask));
+      })
+    );
+    const user = userEvent.setup();
+    await act(async () => {
+      render(<App />);
+    });
+    await user.type(screen.getByTestId('title-input'), 'Task without priority');
+    await user.click(screen.getByTestId('submit-task'));
+    await waitFor(() => {
+      expect(screen.getByTestId('priority-P3-2')).toHaveClass('Mui-selected');
+    });
+  });
+
+  test('selecting a priority updates the task and highlights it as blue', async () => {
+    let tasks = [
+      { id: 1, title: 'Test Task 1', description: 'Desc 1', due_date: '2025-09-30', completed: 0, priority: 'P3' },
+    ];
+    server.use(
+      rest.get('/api/tasks', (req, res, ctx) => {
+        return res(ctx.status(200), ctx.json(tasks));
+      }),
+      rest.patch('/api/tasks/:id', (req, res, ctx) => {
+        tasks = tasks.map((t) =>
+          t.id === Number(req.params.id) ? { ...t, priority: req.body.priority } : t
+        );
+        return res(ctx.status(200), ctx.json(tasks[0]));
+      })
+    );
+    await act(async () => {
+      render(<App />);
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('priority-P3-1')).toHaveClass('Mui-selected');
+    });
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId('priority-P1-1'));
+    await waitFor(() => {
+      expect(screen.getByTestId('priority-P1-1')).toHaveClass('Mui-selected');
+      expect(screen.getByTestId('priority-P3-1')).not.toHaveClass('Mui-selected');
     });
   });
 
