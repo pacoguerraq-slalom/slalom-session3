@@ -1,0 +1,20 @@
+/* Colors for the task priority toggle buttons (P1/P2/P3), per UI sketch */
+.priority-toggle.unselected {
+  background-color: #7A7A7A;
+  border-color: #7A7A7A;
+  color: #ffffff;
+}
+
+.priority-toggle.unselected:hover {
+  background-color: #616161;
+}
+
+.priority-toggle.selected {
+  background-color: #07F2E6;
+  border-color: #07F2E6;
+  color: #212121;
+}
+
+.priority-toggle.selected:hover {
+  background-color: #07F2E6;
+}

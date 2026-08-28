@@ -6,11 +6,10 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import EventIcon from '@mui/icons-material/Event';
+import './Priority.css';
 
 // Priority values allowed for a task; new tasks default to P3 on the backend
 const PRIORITY_OPTIONS = ['P1', 'P2', 'P3'];
-const PRIORITY_UNSELECTED_COLOR = '#7A7A7A';
-const PRIORITY_SELECTED_COLOR = '#07F2E6';
 
 function TaskList({ onEdit }) {
   const [tasks, setTasks] = useState([]);
@@ -221,40 +220,31 @@ function TaskList({ onEdit }) {
                     size="small"
                     sx={{ mt: 0.75, gap: 0.5 }}
                   >
-                    {PRIORITY_OPTIONS.map((option) => (
-                      <ToggleButton
-                        key={option}
-                        value={option}
-                        data-testid={`priority-${option}-${task.id}`}
-                        aria-label={`Set priority ${option}`}
-                        sx={{
-                          minWidth: 36,
-                          height: 24,
-                          px: 1,
-                          py: 0,
-                          fontSize: '0.7rem',
-                          fontWeight: 700,
-                          lineHeight: 1,
-                          textTransform: 'none',
-                          color: '#ffffff',
-                          backgroundColor: PRIORITY_UNSELECTED_COLOR,
-                          border: `1px solid ${PRIORITY_UNSELECTED_COLOR}`,
-                          '&:hover': {
-                            backgroundColor: '#616161',
-                          },
-                          '&.Mui-selected': {
-                            backgroundColor: PRIORITY_SELECTED_COLOR,
-                            borderColor: PRIORITY_SELECTED_COLOR,
-                            color: '#212121',
-                          },
-                          '&.Mui-selected:hover': {
-                            backgroundColor: PRIORITY_SELECTED_COLOR,
-                          }
-                        }}
-                      >
-                        {option}
-                      </ToggleButton>
-                    ))}
+                    {PRIORITY_OPTIONS.map((option) => {
+                      const isSelected = option === (task.priority || 'P3');
+                      return (
+                        <ToggleButton
+                          key={option}
+                          value={option}
+                          data-testid={`priority-${option}-${task.id}`}
+                          aria-label={`Set priority ${option}`}
+                          className={`priority-toggle ${isSelected ? 'selected' : 'unselected'}`}
+                          sx={{
+                            minWidth: 36,
+                            height: 24,
+                            px: 1,
+                            py: 0,
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            lineHeight: 1,
+                            textTransform: 'none',
+                            border: '1px solid',
+                          }}
+                        >
+                          {option}
+                        </ToggleButton>
+                      );
+                    })}
                   </ToggleButtonGroup>
                 </>
               }
